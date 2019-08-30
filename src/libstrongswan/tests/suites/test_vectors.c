@@ -30,6 +30,7 @@ static transform_type_t tfs[] = {
 	PSEUDO_RANDOM_FUNCTION,
 	RANDOM_NUMBER_GENERATOR,
 	DIFFIE_HELLMAN_GROUP,
+	QSKE_MECHANISM
 };
 
 START_TEST(test_vectors)
