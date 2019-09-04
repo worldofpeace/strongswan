@@ -201,6 +201,80 @@ START_TEST(test_matches)
 }
 END_TEST
 
+static struct {
+	protocol_id_t proto;
+	char *self[5];
+	char *other[5];
+	char *expected;
+	proposal_selection_flag_t flags;
+} select_proposal_data[] = {
+	{ PROTO_ESP, {}, {}, NULL },
+	{ PROTO_ESP, { "aes128" }, {}, NULL },
+	{ PROTO_ESP, {}, { "aes128" }, NULL },
+	{ PROTO_ESP, { "aes128" }, { "aes256" }, NULL },
+	{ PROTO_ESP, { "aes128" }, { "aes128" }, "aes128" },
+	{ PROTO_ESP, { "aes128", "aes256" }, { "aes256", "aes128" }, "aes128",
+		PROPOSAL_PREFER_CONFIGURED },
+	{ PROTO_ESP, { "aes128", "aes256" }, { "aes256", "aes128" }, "aes256" },
+	{ PROTO_ESP, { "aes128-modp1024", "aes256-modp1024" },
+				 { "aes256-modp2048", "aes128-modp2048" }, NULL },
+	{ PROTO_ESP, { "aes128-modp1024", "aes256-modp1024" },
+				 { "aes256-modp2048", "aes128-modp2048" }, "aes256",
+		PROPOSAL_STRIP_DH },
+	{ PROTO_ESP, { "aes128-modp1024", "aes256-modp1024" },
+				 { "aes256-modp2048", "aes128-modp2048" }, "aes128",
+		PROPOSAL_PREFER_CONFIGURED | PROPOSAL_STRIP_DH },
+};
+
+START_TEST(test_select_proposal)
+{
+	linked_list_t *self, *other;
+	proposal_t *proposal, *selected, *expected;
+	int i;
+
+	self = linked_list_create();
+	other = linked_list_create();
+
+	for (i = 0; i < countof(select_proposal_data[_i].self); i++)
+	{
+		if (!select_proposal_data[_i].self[i])
+		{
+			break;
+		}
+		proposal = proposal_create_from_string(select_proposal_data[_i].proto,
+											select_proposal_data[_i].self[i]);
+		self->insert_last(self, proposal);
+	}
+	for (i = 0; i < countof(select_proposal_data[_i].other); i++)
+	{
+		if (!select_proposal_data[_i].other[i])
+		{
+			break;
+		}
+		proposal = proposal_create_from_string(select_proposal_data[_i].proto,
+											select_proposal_data[_i].other[i]);
+		other->insert_last(other, proposal);
+	}
+	selected = proposal_select(self, other, select_proposal_data[_i].flags);
+	if (select_proposal_data[_i].expected)
+	{
+		expected = proposal_create_from_string(select_proposal_data[_i].proto,
+											select_proposal_data[_i].expected);
+		ck_assert(selected);
+		ck_assert_msg(expected->equals(expected, selected), "proposal %P does "
+					  "not match expected %P", selected, expected);
+		expected->destroy(expected);
+	}
+	else
+	{
+		ck_assert(!selected);
+	}
+	DESTROY_IF(selected);
+	other->destroy_offset(other, offsetof(proposal_t, destroy));
+	self->destroy_offset(self, offsetof(proposal_t, destroy));
+}
+END_TEST
+
 START_TEST(test_promote_dh_group)
 {
 	proposal_t *proposal;
@@ -356,6 +430,11 @@ Suite *proposal_suite_create()
 
 	tc = tcase_create("matches");
 	tcase_add_loop_test(tc, test_matches, 0, countof(select_data));
+	suite_add_tcase(s, tc);
+
+	tc = tcase_create("select_proposal");
+	tcase_add_loop_test(tc, test_select_proposal, 0,
+						countof(select_proposal_data));
 	suite_add_tcase(s, tc);
 
 	tc = tcase_create("promote_dh_group");

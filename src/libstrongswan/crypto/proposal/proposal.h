@@ -255,7 +255,19 @@ proposal_t *proposal_create_default_aead(protocol_id_t protocol);
  * @param algs				algorithms as string
  * @return					proposal_t object
  */
-proposal_t *proposal_create_from_string(protocol_id_t protocol, const char *algs);
+proposal_t *proposal_create_from_string(protocol_id_t protocol,
+										const char *algs);
+
+/**
+ * Select a common proposal from the given lists of proposals.
+ *
+ * @param configured		list of configured/local proposals
+ * @param supplied			list of supplied/remote proposals
+ * @param flags				flags to consider during proposal selection
+ * @return					selected proposal, or NULL (allocated)
+ */
+proposal_t *proposal_select(linked_list_t *configured, linked_list_t *supplied,
+							proposal_selection_flag_t flags);
 
 /**
  * printf hook function for proposal_t.
