@@ -207,9 +207,10 @@ struct proposal_t {
 	/**
 	 * Clone a proposal.
 	 *
+	 * @param flags			flags to consider during cloning
 	 * @return				clone of proposal
 	 */
-	proposal_t *(*clone) (proposal_t *this);
+	proposal_t *(*clone)(proposal_t *this, proposal_selection_flag_t flags);
 
 	/**
 	 * Destroys the proposal object.

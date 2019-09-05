@@ -310,7 +310,7 @@ METHOD(ike_cfg_t, get_proposals, linked_list_t*,
 	enumerator = this->proposals->create_enumerator(this->proposals);
 	while (enumerator->enumerate(enumerator, &current))
 	{
-		current = current->clone(current);
+		current = current->clone(current, PROPOSAL_ALLOW_PRIVATE);
 		proposals->insert_last(proposals, current);
 	}
 	enumerator->destroy(enumerator);
